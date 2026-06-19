@@ -1,0 +1,51 @@
+# Secrets
+.env
+
+# Machine-local Claude Code state
+.claude/settings.local.json
+.dm_session
+
+# Personal campaign data — playthroughs, characters, session logs, secrets
+campaigns/
+.active
+
+# Scraped Greyhawk wiki setting data (copyrighted; regeneratable via tools/)
+settings/greyhawk/greyhawk.db
+settings/greyhawk/greyhawk.db-shm
+settings/greyhawk/greyhawk.db-wal
+settings/greyhawk/images/
+
+# Copyrighted reference text & derived tables (regeneratable via tools/)
+global/reference/combat_and_tactics.txt
+global/reference/uk7-dark-clouds-gather.md
+global/reference/rules_quick_ref.md
+global/encounter_tables.json
+global/encounter_tables.json.bak*
+global/*.db.bak*
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+*.egg-info/
+
+# Generated binary data (regeneratable)
+global/*.db
+global/monsters/
+
+# Copyrighted reference material
+campaigns/*/reference/
+global/reference/dmg.txt
+global/reference/monstermanual.txt
+global/reference/phb.txt
+
+# Generated images (regeneratable via API)
+campaigns/*/images/*.png
+campaigns/*/images/*.jpg
+campaigns/*/images/*.webp
+
+# Generated narration audio (regeneratable via TTS)
+campaigns/*/audio/

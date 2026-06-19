@@ -1,0 +1,5 @@
+mcp
+flask
+python-dotenv
+replicate
+openai

@@ -1,0 +1,275 @@
+# Monsters missing core stats (post-dedup + post-backfill)
+# 271 rows. cols: name | id | missing | source
+# residual = wiki infobox has no machine-readable stat fields (group/index pages, body-table stats)
+
+aleax	900042	thac0	Planescape Campaign Setting (2600)
+angler fish	900065	xp_value	Dragon Magazine Issue #235
+animal, cenozoic	900068	hit_dice,thac0,xp_value	Dragon Magazine Issue #167
+animal, herd (athas)	900983	hit_dice,thac0,xp_value	MC12 Monstrous Compendium Dark Sun Appendix I
+animental	900073	thac0	Monstrous Compendium Planescape: Appendix III
+apparition	900079	thac0	MC14 Monstrous Compendium Fiend Folio Appendi
+aquatic lernean hydra	900082	thac0	adnd2e.fandom.com
+archer frog	900092	xp_value	Dragon Magazine Issue #247
+archomental, evil	900095	hit_dice,thac0,xp_value	Monstrous Compendium Planescape: Appendix III
+archomental, good	900096	hit_dice,thac0,xp_value	Monstrous Compendium Planescape: Appendix III
+archon	900097	hit_dice,thac0,xp_value	MC8 Monstrous Compendium Outer Planes Appendi
+avangion	900129	thac0	Dragon Kings (2408)
+baatezu (devil)	900136	hit_dice,thac0,xp_value	MC8 Monstrous Compendium Outer Planes Appendi
+bainligor	900149	thac0	Monstrous Compendium Annual Volume Four (2173
+bat (various)	900170	hit_dice,thac0,xp_value	Monstrous Manual (2140) MC11 Monstrous Compen
+bear	900176	hit_dice,thac0,xp_value	Monstrous Manual (2140)
+beetle	900180	hit_dice,thac0,xp_value	Monstrous Compendium Annual Volume Three (216
+beholder minions	900186	hit_dice,thac0,xp_value	I, Tyrant (9521)
+beljuril dragon	900189	thac0	Dragon Magazine #265(42-43)
+bird	15	hit_dice,xp_value	
+bird (krynn)	900201	hit_dice,thac0,xp_value	MC4 Monstrous Compendium Dragonlance Appendix
+bird (mystara)	900202	hit_dice,thac0,xp_value	Monstrous Compendium Mystara Appendix (2501)
+bird (toril)	900203	hit_dice,thac0,xp_value	MC11 Monstrous Compendium Forgotten Realms Ap
+bird maidens	900204	thac0	Monstrous Manual (2140) MC2 Monstrous Compend
+blackball	900213	thac0	Monstrous Compendium Mystara Appendix (2501)
+bloodgrass	900225	thac0	Monstrous Compendium Dark Sun Appendix II: Te
+booka	900252	hit_dice	MC5 Monstrous Compendium Greyhawk Adventures 
+bussengeist	900288	thac0	MC10 Monstrous Compendium Ravenloft Appendix 
+caiman katanga	901119	thac0	Polyhedron Newszine 102
+caladrius	900295	hit_dice	The Glory of Rome Campaign Sourcebook
+caller in darkness	900296	thac0	Dark Sun: City by the Silt Sea (2432)
+carnivorous plant (athas)	900309	hit_dice,thac0,xp_value	MC12 Monstrous Compendium Dark Sun Appendix I
+carnivorous plant i (toril)	900310	hit_dice,thac0,xp_value	MC11 Monstrous Compendium Forgotten Realms Ap
+carnivorous plant ii (toril)	900311	hit_dice,thac0,xp_value	MC11 Monstrous Compendium Forgotten Realms Ap
+centipede	900321	hit_dice,thac0,xp_value	Monstrous Manual (2140)
+cerebral parasite	900324	thac0	PHBR5 The Complete Psionics Handbook (2117)
+charuntes	900335	thac0	Dragon Magazine Issue 210
+chronolily	900351	thac0	Monstrous Compendium Annual Volume Two (2158)
+clerical elemental (athas)	900359	thac0	Dragon Kings (2408)
+clockwork horror	900361	hit_dice,thac0,xp_value	MC7 Monstrous Compendium Spelljammer Appendix
+common animator	900378	thac0	Monstrous Compendium Ravenloft Appendix III: 
+craighe (elven hawk)	900393	xp_value	Dragon Magazine Issue #269
+creature variations (storm riders)	900397	hit_dice,thac0,xp_value	FRA1 Storm Riders (9281)
+curst	900420	thac0	Monstrous Compendium Annual Volume Two (2158)
+dangerous plant (mm)	900431	hit_dice,thac0,xp_value	Monstrous Manual (2140) MC2 Monstrous Compend
+dangerous plant (mystara)	900432	hit_dice,thac0,xp_value	Monstrous Compendium Mystara Appendix (2501)
+darkness	900444	hit_dice,thac0,xp_value	Dungeon Issue #81
+death linen	900456	hit_dice,thac0,xp_value	Dragon Issue #252
+death shade	900459	thac0	SJA2 Skull & Crossbows (9286)
+deva (aasimon)	900484	hit_dice,thac0,xp_value	MC8 Monstrous Compendium Outer Planes Appendi
+dhampir	900488	thac0	A Guide to Transylvania (9529)
+dinosaur	900497	hit_dice,thac0,xp_value	Monstrous Manual (2140)
+dinosaur i	900498	hit_dice,thac0,xp_value	MC3 Monstrous Compendium Forgotten Realms App
+dinosaur ii	900499	hit_dice,thac0,xp_value	MC3 Monstrous Compendium Forgotten Realms App
+dinosaur iii	900500	hit_dice,thac0,xp_value	MC3 Monstrous Compendium Forgotten Realms App
+dinosaur iv	900501	hit_dice,thac0,xp_value	MC3 Monstrous Compendium Forgotten Realms App
+dinosaur ix	900502	hit_dice,thac0,xp_value	MC3 Monstrous Compendium Forgotten Realms App
+dinosaur v	900503	hit_dice,thac0,xp_value	MC3 Monstrous Compendium Forgotten Realms App
+dinosaur vi	900504	hit_dice,thac0,xp_value	MC3 Monstrous Compendium Forgotten Realms App
+dinosaur viii	900505	hit_dice,thac0,xp_value	MC3 Monstrous Compendium Forgotten Realms App
+dinosaur x	900506	hit_dice,thac0,xp_value	MC3 Monstrous Compendium Forgotten Realms App
+dinosaur xi	900507	hit_dice,thac0,xp_value	Dragon Magazine 187
+dirtwraith (sargusian fungus)	900509	thac0	Dragon Magazine Issue #270
+domestic animal i (athas)	900520	hit_dice,thac0,xp_value	Dark Sun Campaign Setting (2400)
+doppelganger plant	900526	thac0	adnd2e.fandom.com
+dragon (athas)	900535	thac0	Dragon Kings (2408)
+dragon, general	45	hit_dice,xp_value	
+dragonfly	900545	hit_dice,thac0,xp_value	Monstrous Compendium Mystara Appendix (2501)
+drake (mystara)	900549	hit_dice,thac0,xp_value	Monstrous Compendium Mystara Appendix (2501)
+dream stalker	900558	thac0	Monstrous Compendium Annual Volume Four (2173
+dreamshadow	900559	thac0	MC4 Monstrous Compendium Dragonlance Appendix
+drik	900566	thac0	Monstrous Compendium Dark Sun Appendix II: Te
+duhlarkin	900573	thac0	adnd2e.fandom.com
+dune runner	900575	thac0	MC12 Monstrous Compendium Dark Sun Appendix I
+dvati	900581	xp_value	Dragon Magazine Issue #271
+dwarf banshee	900583	thac0	MC12 Monstrous Compendium Dark Sun Appendix I
+dwarf, utuchekulu	902081	thac0	Dungeon Issue #56
+egarus	900601	thac0	Monstrous Compendium Planescape: Appendix III
+einheriar	900602	thac0	MC8 Monstrous Compendium Outer Planes Appendi
+ekimmu	900603	thac0	Monstrous Compendium Annual Volume Two (2158)
+eladrin	900604	hit_dice,thac0,xp_value	Monstrous Compendium Planescape Appendix II (
+elemental (ravenloft)	900609	hit_dice,thac0,xp_value	MC10 Monstrous Compendium Ravenloft Appendix 
+elemental vermin	900613	hit_dice,thac0,xp_value	Al-Qadim: City of Delights (1091) Monstrous C
+elemental, quasi, positive, mineral, glomus	900840	thac0	Dragon Magazine Issue #174
+elephant	900617	hit_dice,thac0,xp_value	Monstrous Manual (2140) MC2 Monstrous Compend
+esperweed	900633	thac0	MC12 Monstrous Compendium Dark Sun Appendix I
+faerie phiz	900650	thac0	Dragon Magazine Issue #191
+faerie, petty	901495	hit_dice	adnd2e.fandom.com
+familiar (mystara)	900655	hit_dice,thac0,xp_value	Monstrous Compendium Mystara Appendix (2501)
+fiend knight	900676	thac0	Dragon Magazine Issue #206
+fireweed	900699	thac0	adnd2e.fandom.com
+fish	89	hit_dice,xp_value	
+fish (toril)	900702	hit_dice,thac0,xp_value	Monstrous Compendium Annual Volume Two (2158)
+fish of the great glacier	900703	hit_dice,thac0,xp_value	FR14 The Great Glacier (9351)
+fish, deep ocean	900467	hit_dice,thac0,xp_value	Monstrous Compendium Annual Volume Four (2173
+fish, subterranean	901912	hit_dice,thac0,xp_value	Monstrous Compendium Annual Volume Two (2158)
+fish, tropical	902031	hit_dice,thac0,xp_value	Monstrous Compendium Annual Volume Four (2173
+fleas of madness	900711	thac0	adnd2e.fandom.com
+fogwarden	900722	thac0	Monstrous Compendium Annual Volume Four (2173
+formian	900728	hit_dice,thac0,xp_value	Monstrous Compendium Annual Volume Three (216
+fungus	900744	hit_dice,thac0,xp_value	Monstrous Manual (2140)
+gadabout	900750	thac0	MC9 Monstrous Compendium Spelljammer Appendix
+gargouille	900761	hit_dice	Dragon Magazine 248
+gargoyle ii	900762	hit_dice,thac0,xp_value	Monstrous Compendium Annual Volume Three (216
+geist	900773	thac0	Ravenloft: Realm of Terror (1053) Monstrous C
+gello monster	900775	thac0	Dragon Magazine Issue #156
+gem dragon	900777	hit_dice,thac0,xp_value	MC14 Monstrous Compendium Fiend Folio Appendi
+gen	900779	hit_dice,thac0,xp_value	MC13 Monstrous Compendium Al-Qadim Appendix (
+genie	95	xp_value	
+ghost pack	900786	thac0	Shaman (9507)
+ghost, animal	900070	hit_dice,thac0,xp_value	Monstrous Compendium Ravenloft Appendix III: 
+giant mammal	900813	hit_dice,thac0,xp_value	Monstrous Manual (2140)
+giant, firbolg	102	hit_dice	
+gith pirate	900835	thac0	Monstrous Manual (2140) MC7 Monstrous Compend
+gnome	900846	hit_dice,thac0,xp_value	Monstrous Manual (2140)
+golem (savage coast)	900862	hit_dice,thac0,xp_value	Monstrous Compendium Savage Coast Appendix (2
+golem, general	125	hit_dice,xp_value	
+great cat	900884	hit_dice,thac0,xp_value	Monstrous Manual (2140)
+greater animator	900889	thac0	Monstrous Compendium Ravenloft Appendix III: 
+grommam	900914	thac0	adnd2e.fandom.com
+grotesque	900915	hit_dice,thac0	Dragon Magazine 248
+hearth fiend	900966	thac0	Monstrous Compendium Ravenloft Appendix III: 
+heraldic servant i	900976	hit_dice,thac0,xp_value	Monstrous Compendium Savage Coast Appendix (2
+heraldic servant ii	900977	hit_dice,thac0,xp_value	Monstrous Compendium Savage Coast Appendix (2
+heraldic servant iii	900978	hit_dice,thac0,xp_value	Monstrous Compendium Savage Coast Appendix (2
+heraldic servant iv	900979	hit_dice,thac0,xp_value	Monstrous Compendium Savage Coast Appendix (2
+heraldic servant v	900980	hit_dice,thac0,xp_value	Monstrous Compendium Savage Coast Appendix (2
+herd mammals	900984	hit_dice,thac0,xp_value	Monstrous Manual (2140)
+hivebrood	900996	hit_dice,thac0,xp_value	Monstrous Compendium Mystara Appendix (2501)
+holstein	900999	thac0	Polyhedron 56
+homunculus, elemental	900611	thac0	adnd2e.fandom.com
+horde	901003	thac0	Monstrous Compendium Mystara Appendix (2501)
+horse	901008	hit_dice,thac0,xp_value	Monstrous Manual (2140) MC2 Monstrous Compend
+horse (endless waste)	901009	hit_dice,thac0,xp_value	The Horde (1055)
+human	901030	hit_dice,thac0,xp_value	Monstrous Manual (2140)
+human (athas)	901022	hit_dice,thac0,xp_value	Monstrous Compendium Dark Sun Appendix II: Te
+human (cerilia)	901023	hit_dice,thac0,xp_value	Monstrous Compendium Annual Volume Three (216
+human (krynn)	901028	hit_dice,thac0,xp_value	MC4 Monstrous Compendium Dragonlance Appendix
+human (wonderseeker)	901032	thac0	SJR1 Lost Ships (9280)
+hypnos	901043	thac0	The Nightmare Lands (1124)
+ikiryo	901054	thac0	MC6 Monstrous Compendium Kara-Tur Appendix (2
+insect	156	hit_dice,xp_value	
+insect swarm (athas)	901070	thac0	adnd2e.fandom.com
+insectoid (exoskeleton)	901072	hit_dice,thac0,xp_value	Monstrous Compendium Ravenloft Appendix III: 
+killmoulis	901132	hit_dice	MC2 Monstrous Compendium Volume II (2103)
+krajen	901153	hit_dice	adnd2e.fandom.com
+kuei	901159	thac0	MC6 Monstrous Compendium Kara-Tur Appendix (2
+lacerial	901163	thac0	adnd2e.fandom.com
+lakshu	901166	thac0	MC7 Monstrous Compendium Spelljammer Appendix
+life-shaped creation: guardian	901192	hit_dice,thac0,xp_value	Monstrous Compendium Annual Volume Three (216
+life-shaped creation: transport	901193	hit_dice,thac0,xp_value	Monstrous Compendium Annual Volume Three (216
+living idol	901203	hit_dice,thac0,xp_value	MC13 Monstrous Compendium Al-Qadim Appendix (
+living tattoo	901207	hit_dice,thac0,xp_value	Monstrous Compendium Ravenloft Appendix III: 
+lizard	901210	hit_dice,thac0,xp_value	MC1 Monstrous Compendium Volume One (2102) Mo
+lizard (mystara)	901211	hit_dice,thac0,xp_value	Monstrous Compendium Mystara Appendix (2501)
+lizard kin (savage coast)	901215	hit_dice,thac0,xp_value	Monstrous Compendium Savage Coast Appendix (2
+lizard-kin (mystara)	901214	hit_dice,thac0,xp_value	Monstrous Compendium Mystara Appendix (2501)
+lumineaux	901223	thac0	MC7 Monstrous Compendium Spelljammer Appendix
+lycanthrope, general	178	hit_dice,xp_value	
+lycanthrope, wererat lord	902181	thac0	Dungeon Issue #62
+lyra bird, saragòn	901664	thac0	Monstrous Compendium Savage Coast Appendix (2
+magen	901240	hit_dice,thac0,xp_value	Monstrous Compendium Mystara Appendix (2501)
+mammal	188	hit_dice,xp_value	
+mammal, herd ii	900985	hit_dice,thac0,xp_value	Monstrous Compendium Annual Volume Two (2158)
+mammal, minimal	901311	hit_dice,thac0,xp_value	MC2 Monstrous Compendium Volume II (2103)
+mammal, small	190	hit_dice,xp_value	
+man-drake	901253	thac0	Dragon Magazine Issue #156
+manikin	901257	thac0	Monstrous Compendium Mystara Appendix (2501)
+meme	901287	thac0	A Guide to the Ethereal Plane (2633)
+mind flayer (illithid)	197	hit_dice	
+minor animator	901316	thac0	Monstrous Compendium Ravenloft Appendix III: 
+misi	901319	thac0	MC7 Monstrous Compendium Spelljammer Appendix
+modron	901327	hit_dice,thac0,xp_value	Planescape: Campaign Setting (2600)
+moigno	901328	thac0	Planescape: Planes of Law (2607)
+moilian heart	901329	thac0	Return to the Tomb of Horrors (1162)
+mold	901331	thac0	adnd2e.fandom.com
+mold ii	901332	thac0	adnd2e.fandom.com
+mold, chromatic	900349	thac0	Monstrous Compendium Annual Volume Four (2173
+mongrelman, infiltrator	901333	thac0	Polyhedron Newszine 121
+mummy, creature	900396	thac0	adnd2e.fandom.com
+mythuínn folk	901367	hit_dice	Monstrous Compendium Savage Coast Appendix (2
+nay-churr	901380	thac0	MC7 Monstrous Compendium Spelljammer Appendix
+night rider	901403	thac0	FRE3 Waterdeep (9249)
+nightmare court, the	901984	hit_dice,thac0,xp_value	The Nightmare Lands (1124)
+nixie (water sprite)	901412	hit_dice	MC1 Monstrous Compendium Volume One (2102)
+nosferatu	901422	thac0	Monstrous Compendium Savage Coast Appendix (2
+obedient	901429	thac0	Monstrous Compendium Ravenloft Appendix III: 
+odem	901435	thac0	Ravenloft: Realm of Terror (1053) Monstrous C
+ooze/slime/jelly i	901450	hit_dice,thac0,xp_value	Monstrous Manual (2140) MC2 Monstrous Compend
+ooze/slime/jelly ii	901451	hit_dice,thac0,xp_value	Monstrous Manual (2140) MC2 Monstrous Compend
+orbus	901455	thac0	Spelljammer: Adventures in Space (1049)
+pack of the wild hunt	901469	xp_value	Legends & Lore
+paka	901471	thac0	Monstrous Compendium Ravenloft Appendix III: 
+palimpsest	901473	thac0	Monstrous Compendium Annual Volume Two (2158)
+paraelemental	901477	hit_dice,thac0,xp_value	Monstrous Compendium Planescape: Appendix III
+parasite	901480	hit_dice,thac0,xp_value	Al-Qadim: City of Delights (1091) Monstrous C
+parasite (savage coast)	901481	thac0	Monstrous Compendium Savage Coast Appendix (2
+pasocada ghost	901484	thac0	FMQ1 City of Gold (9349)
+pedipalp	901487	hit_dice,thac0,xp_value	FOR2 The Drow of the Underdark (9326)
+phlog-crawler	901506	thac0	MC7 Monstrous Compendium Spelljammer Appendix
+phouka	901507	thac0	HR3 Celts Campaign Sourcebook (9376)
+piranha	901511	hit_dice	adnd2e.fandom.com
+piranha ant	901512	thac0	Dragon Magazine Annual 1998
+plague moth	901352	xp_value	Dragon Magazine Issue #238
+plant (savage coast)	901519	hit_dice,thac0,xp_value	Monstrous Compendium Savage Coast Appendix (2
+plant, intelligent	901073	hit_dice,thac0,xp_value	Monstrous Manual (2140) MC2 Monstrous Compend
+plant, vampire moss	902092	thac0	Monstrous Compendium Annual Volume One (2145)
+pleistocene animal	900069	hit_dice,thac0,xp_value	MC3 Monstrous Compendium Forgotten Realms App
+poisonous eel	901526	hit_dice	LNA2 Nehwon (9305)
+porcupine	901529	hit_dice	adnd2e.fandom.com
+porton	901530	thac0	SJR6 Greyspace (9374)
+power symbiont	901533	thac0	MC7 Monstrous Compendium Spelljammer Appendix
+pseudo-familiar	901540	thac0	Monstrous Compendium Ravenloft Appendix III: 
+pudding, deadly	900452	hit_dice,thac0,xp_value	Monstrous Manual (2140) MC2 Monstrous Compend
+quakedancer	901560	thac0	Dragon Magazine Issue #180
+quasielemental, negative	901387	hit_dice,thac0,xp_value	Monstrous Compendium Planescape: Appendix III
+quasielemental, positive	901532	hit_dice,thac0,xp_value	Monstrous Compendium Planescape: Appendix III
+rabbiun (creature)	901569	hit_dice	A Guide to the Ethereal Plane (2633)
+raggamoffyn	901575	hit_dice,thac0,xp_value	Monstrous Compendium Annual Volume Two (2158)
+ravenous	901590	thac0	The Scarlet Brotherhood (11374)
+ring-worm	901621	thac0	MC11 Monstrous Compendium Forgotten Realms Ap
+rohch	901630	hit_dice,thac0,xp_value	MC11 Monstrous Compendium Forgotten Realms Ap
+saurial	901668	hit_dice,thac0,xp_value	MC11 Monstrous Compendium Forgotten Realms Ap
+scarlet dancer (mist)	901676	thac0	adnd2e.fandom.com
+shadeling	901714	thac0	Monstrous Compendium Annual Volume One (2145)
+shapeshifter	901736	hit_dice,thac0,xp_value	Monstrous Compendium Mystara Appendix (2501)
+shimmerweed	901752	thac0	MC4 Monstrous Compendium Dragonlance Appendix
+silver dog	901768	thac0	MC11 Monstrous Compendium Forgotten Realms Ap
+skeleton, variant	902100	hit_dice,thac0,xp_value	Monstrous Compendium Annual Volume Four (2173
+slaad	901802	hit_dice,thac0,xp_value	Monstrous Manual (2140) Monstrous Compendium 
+slinker	901807	hit_dice	MC7 Monstrous Compendium Spelljammer Appendix
+small cats	901815	hit_dice	adnd2e.fandom.com
+snake	901820	hit_dice,thac0,xp_value	Monstrous Manual (2140) MC2 Monstrous Compend
+sorrow	901831	thac0	LC3 Nightwatch in the Living City (9316)
+spectator (beholder-kin)	901841	thac0	Monstrous Manual (2140)
+spectral awnshegh	901842	thac0	Blood Spawn (3140)
+spectral minion	901847	thac0	MC4 Monstrous Compendium Dragonlance Appendix
+sphinx	901852	hit_dice,thac0,xp_value	Monstrous Manual (2140) MC2 Monstrous Compend
+spider	901854	hit_dice,thac0,xp_value	Monstrous Manual (2140) MC2 Monstrous Compend
+spider, xakhun	902241	hit_dice,thac0,xp_value	Dragon Magazine #244
+spider-kin	901859	hit_dice,thac0,xp_value	Monstrous Compendium Mystara Appendix (2501)
+spirit warrior	901870	thac0	adnd2e.fandom.com
+spirit, heroic	900988	thac0	Monstrous Compendium Savage Coast Appendix (2
+spirit, walleran	902138	hit_dice,thac0,xp_value	Monstrous Compendium Savage Coast Appendix (2
+spirits, minor	901872	hit_dice,thac0,xp_value	Shaman (9507)
+spyder-fiend	901877	hit_dice,thac0,xp_value	Tomes: The Rod of Seven Parts (1145) Monstrou
+squeaker	901879	hit_dice	Dragon Mountain (1089)
+starfly plant	901887	thac0	MC9 Monstrous Compendium Spelljammer Appendix
+statue, living	901205	hit_dice,thac0,xp_value	Monstrous Compendium Mystara Appendix (2501)
+strangleweed	901908	thac0	WGA2 Falconmaster (9289)
+talisman servant	901943	hit_dice,thac0,xp_value	Dragon Magazine Issue #242
+the calnar horse	900297	hit_dice	Dwarven Kingdoms of Krynn (1086)
+the viscount of minauros	900138	xp_value	Dragon Magazine 223
+thessalmonster	901992	hit_dice,thac0,xp_value	MC3 Monstrous Compendium Forgotten Realms App
+trilloch	902026	thac0	Monstrous Compendium Planescape: Appendix III
+tropical mammals	902032	hit_dice,thac0,xp_value	Dungeon Issue #56
+twill (pocket rat)	902046	hit_dice	Dragon Issue #269
+tylor	902048	thac0	MC4 Monstrous Compendium Dragonlance Appendix
+tymher-haid	902049	thac0	Dragon Magazine Issue #186
+urchin	902071	hit_dice,thac0,xp_value	Monstrous Manual (2140) MC2 Monstrous Compend
+vagabond	902086	thac0	PHBR5 The Complete Psionics Handbook (2117)
+vampire	277	xp_value	
+villichi	902111	thac0	MC12 Monstrous Compendium Dark Sun Appendix I
+waff	902134	thac0	Blood Spawn (3140)
+webbird	902161	hit_dice	adnd2e.fandom.com
+whale	902191	hit_dice,thac0,xp_value	Monstrous Manual (2140)
+witchlight marauder	902221	hit_dice,thac0,xp_value	MC9 Monstrous Compendium Spelljammer Appendix
+worm	902226	hit_dice,thac0,xp_value	Monstrous Manual (2140) MC2 Monstrous Compend
+worm (mystara)	902227	hit_dice,thac0,xp_value	Monstrous Compendium Mystara Appendix (2501)
+zombie fog	902280	thac0	adnd2e.fandom.com
+zurchin	902286	xp_value	MC9 Monstrous Compendium Spelljammer Appendix

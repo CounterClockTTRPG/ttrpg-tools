@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "ttrpg": {
+      "command": "/home/raf/roleplaying/ttrpg2/.venv/bin/python3",
+      "args": ["/home/raf/roleplaying/ttrpg2/server.py"],
+      "cwd": "/home/raf/roleplaying/ttrpg2"
+    }
+  }
+}

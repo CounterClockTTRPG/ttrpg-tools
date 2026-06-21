@@ -1,2 +1,0 @@
-- Add store generator MCP (with price modifier & category/rarity specification - e.g. weapons, cheap, common)
-- Define DSL for world map, translating to GeoJSON. Use Antlr or Peggy.JS for parsing. Define structured metadata (e.g. city population, locations, description...)

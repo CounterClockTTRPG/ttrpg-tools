@@ -52,23 +52,18 @@ def register(mcp):
     def monster_lookup(name: str) -> dict:
         """Look up a monster by name in the AD&D 2e monster database.
         Returns stats including HD, THAC0, AC, damage, treasure type, morale, and XP value.
-        Supports partial/case-insensitive name matching."""
+        Supports partial/case-insensitive name matching.
+
+        An exact (case-insensitive) name match always wins and returns that single
+        monster — so monster_lookup('skeleton') returns the HD 1 standard skeleton,
+        not the 'skeleton, warrior' variant. When there is no exact match but several
+        partial matches, returns {"matches": [...], "count": N} so the caller can
+        disambiguate variants (e.g. the many 'skeleton, *' entries)."""
         db_path = _find_db(_MONSTERS_DB_CANDIDATES)
         if db_path is None:
             return {"error": "monsters.db not found."}
 
-        conn = sqlite3.connect(str(db_path))
-        conn.row_factory = sqlite3.Row
-        try:
-            cur = conn.cursor()
-            cur.execute(
-                "SELECT * FROM monsters WHERE name LIKE ? COLLATE NOCASE",
-                (f"%{name}%",),
-            )
-            row = cur.fetchone()
-            if row is None:
-                return {"error": f"No monster matching '{name}' found."}
-
+        def _row_to_monster(row) -> dict:
             return {
                 "name":              row["name"],
                 "climate_terrain":   row["climate_terrain"],
@@ -95,6 +90,33 @@ def register(mcp):
                 "description":       row["description"],
                 "categories":        json.loads(row["categories"]) if _has(row, "categories") and row["categories"] else [],
                 "source":            (row["source"] if _has(row, "source") else None),
+            }
+
+        conn = sqlite3.connect(str(db_path))
+        conn.row_factory = sqlite3.Row
+        try:
+            # Exact (case-insensitive) match wins outright.
+            cur = conn.execute(
+                "SELECT * FROM monsters WHERE name = ? COLLATE NOCASE LIMIT 1",
+                (name,),
+            )
+            row = cur.fetchone()
+            if row is not None:
+                return _row_to_monster(row)
+
+            # Otherwise gather every partial match.
+            cur = conn.execute(
+                "SELECT * FROM monsters WHERE name LIKE ? COLLATE NOCASE ORDER BY name",
+                (f"%{name}%",),
+            )
+            rows = cur.fetchall()
+            if not rows:
+                return {"error": f"No monster matching '{name}' found."}
+            if len(rows) == 1:
+                return _row_to_monster(rows[0])
+            return {
+                "matches": [_row_to_monster(r) for r in rows],
+                "count":   len(rows),
             }
         finally:
             conn.close()

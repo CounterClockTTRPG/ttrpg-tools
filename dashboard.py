@@ -2,6 +2,7 @@
 """Campaign dashboard web app. Run: python3 dashboard.py [--campaign NAME] [--port 5000]"""
 
 import argparse
+import base64
 import html
 import json
 import re
@@ -22,6 +23,7 @@ from tools import dm_session as _dm
 from tools import images as _img
 from tools import tts as _tts
 from tools import lore_facts as _facts
+from tools import _dungml_http as _dh
 
 _MONSTERS_DB  = Path(__file__).parent / "global" / "monsters.db"
 _MONSTERS_DIR = Path(__file__).parent / "global" / "monsters"
@@ -32,7 +34,7 @@ _GREYHAWK_IMG = Path(__file__).parent / "settings" / "greyhawk" / "images"
 # Cached read-only connections. The reference DBs (monsters/2e/rules) are
 # read-only at runtime, so a single connection per DB shared across Flask
 # threads is safe with check_same_thread=False. Avoids the per-request
-# connect cost on hot endpoints like /combat-state.
+# connect cost on hot endpoints like /area-state.
 _db_connections: dict[str, sqlite3.Connection] = {}
 
 
@@ -1198,8 +1200,8 @@ BASE_TEMPLATE = """<!DOCTYPE html>
   <a href="/characters">Cast</a>
   <a href="/locations">Locations</a>
   <a href="/reference">Reference</a>
-  <a href="/combat">Combat</a>
-  <a href="/maps">Maps</a>
+  <a href="/area">Area</a>
+  <a href="/atlas">Atlas</a>
   <a href="/campaigns">Campaigns</a>
   <span class="nav-play-toggles">
     <button id="nav-toggle-toolbar" type="button" class="nav-icon-btn" title="Show/hide the play toolbar" aria-label="Toggle play toolbar">⚙</button>
@@ -3317,6 +3319,50 @@ def _latest_location_name() -> str:
         if ev.get("type") == "location_visited":
             return ev.get("name") or ev.get("slug") or ""
     return ""
+
+
+# ---------------------------------------------------------------------------
+# Fog of war — the player-facing view (?fog=1) hides what the party has not
+# yet discovered: unvisited locations, and DM-only tactical-map detail
+# (trapped/locked doors, un-sprung floor traps). The DM's plain URLs are
+# unaffected, so the operator always sees everything; only links carrying
+# ?fog=1 (e.g. those handed to players) get fogged.
+# ---------------------------------------------------------------------------
+
+def _fog_on() -> bool:
+    """True when the current request asks for the player-facing fog view."""
+    return request.args.get("fog", "").strip().lower() in ("1", "true", "yes", "on")
+
+
+def _fog_qs() -> str:
+    """'?fog=1' when fog is active, else '' — for propagating the mode through
+    in-page links so navigation stays in player view."""
+    return "?fog=1" if _fog_on() else ""
+
+
+def _visited_slugs() -> set[str]:
+    """Slugs of locations/areas the party has visited.
+
+    Sourced from ``location_visited`` events (emitted by create_area /
+    create_location). Both area slugs and location slugs land in the same
+    set; callers disambiguate by where they look the slug up.
+    """
+    out: set[str] = set()
+    if not cfg:
+        return out
+    p = cfg["_dir"] / "events.json"
+    if not p.exists():
+        return out
+    try:
+        events = json.loads(p.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return out
+    for ev in events:
+        if ev.get("type") == "location_visited":
+            slug = ev.get("slug")
+            if slug:
+                out.add(slug)
+    return out
 
 
 def _play_state() -> dict:
@@ -8472,16 +8518,28 @@ def locations():
         body = f"<h1>{html.escape(campaign_name)} — Locations</h1><p class='muted'>No locations yet.</p>"
         return render(f"{campaign_name} — Locations", body)
 
+    fog = _fog_on()
+    qs = _fog_qs()
+    visited = _visited_slugs() if fog else set()
+
     areas = []
     standalone = []
 
     for item in sorted(locs_dir.iterdir()):
         if item.is_dir():
-            sub_count = sum(1 for f in item.glob("*.md"))
+            children = list(item.glob("*.md"))
+            if fog:
+                children = [f for f in children if f.stem in visited]
+                # Show the area only once the party has reached it or one of
+                # the places inside it.
+                if item.name not in visited and not children:
+                    continue
             area_md = locs_dir / f"{item.name}.md"
             area_name = _read_first_heading(area_md) if area_md.exists() else item.name
-            areas.append((item.name, area_name, sub_count))
+            areas.append((item.name, area_name, len(children)))
         elif item.is_file() and item.suffix == ".md":
+            if fog and item.stem not in visited:
+                continue
             name = _read_first_heading(item)
             blurb = _read_first_paragraph(item)
             standalone.append((item.stem, name, blurb))
@@ -8490,7 +8548,7 @@ def locations():
     if areas:
         area_items = "".join(
             f'<div class="card">'
-            f'<h2><a href="/locations/{html.escape(slug)}">{html.escape(name)}</a></h2>'
+            f'<h2><a href="/locations/{html.escape(slug)}{qs}">{html.escape(name)}</a></h2>'
             f'<p class="muted">{sub} location{"s" if sub != 1 else ""}</p>'
             f'</div>'
             for slug, name, sub in areas
@@ -8501,7 +8559,7 @@ def locations():
     if standalone:
         loc_items = "".join(
             f'<div class="card">'
-            f'<h2><a href="/locations/_/{html.escape(slug)}">{html.escape(name)}</a></h2>'
+            f'<h2><a href="/locations/_/{html.escape(slug)}{qs}">{html.escape(name)}</a></h2>'
             f'<p>{html.escape(blurb)}</p>'
             f'</div>'
             for slug, name, blurb in standalone
@@ -8530,6 +8588,17 @@ def area_detail(area: str):
     area_md = locs_dir / f"{area}.md"
     area_dir = locs_dir / area
 
+    fog = _fog_on()
+    qs = _fog_qs()
+    visited = _visited_slugs() if fog else set()
+
+    if fog:
+        known_child = area_dir.exists() and any(
+            md.stem in visited for md in area_dir.glob("*.md")
+        )
+        if area not in visited and not known_child:
+            abort(404)
+
     area_name = _read_first_heading(area_md) if area_md.exists() else area
 
     content_html = ""
@@ -8539,12 +8608,14 @@ def area_detail(area: str):
     sub_cards = []
     if area_dir.exists():
         for md in sorted(area_dir.glob("*.md")):
+            slug = md.stem
+            if fog and slug not in visited:
+                continue
             name = _read_first_heading(md)
             blurb = _read_first_paragraph(md)
-            slug = md.stem
             sub_cards.append(
                 f'<div class="card">'
-                f'<h2><a href="/locations/{html.escape(area)}/{html.escape(slug)}">{html.escape(name)}</a></h2>'
+                f'<h2><a href="/locations/{html.escape(area)}/{html.escape(slug)}{qs}">{html.escape(name)}</a></h2>'
                 f'<p>{html.escape(blurb)}</p>'
                 f'</div>'
             )
@@ -8554,7 +8625,7 @@ def area_detail(area: str):
         sub_html = f"<h2>Locations in {html.escape(area_name)}</h2>" + "".join(sub_cards)
 
     body = (
-        f'<p><a href="/locations">← Locations</a></p>'
+        f'<p><a href="/locations{qs}">← Locations</a></p>'
         f"<h1>{html.escape(area_name)}</h1>"
         f"{content_html}"
         f"{sub_html}"
@@ -8571,12 +8642,14 @@ def location_standalone(slug: str):
 
     if not path.exists():
         abort(404)
+    if _fog_on() and slug not in _visited_slugs():
+        abort(404)
 
     name = _read_first_heading(path)
     content_html = _markdown_to_html(path.read_text(encoding="utf-8"))
 
     body = (
-        f'<p><a href="/locations">← Locations</a></p>'
+        f'<p><a href="/locations{_fog_qs()}">← Locations</a></p>'
         f'<div class="card">{content_html}</div>'
     )
     return render(f"{html.escape(name)} — {html.escape(campaign_name)}", body)
@@ -8590,15 +8663,18 @@ def location_detail(area: str, slug: str):
 
     if not path.exists():
         abort(404)
+    if _fog_on() and slug not in _visited_slugs():
+        abort(404)
 
+    qs = _fog_qs()
     name = _read_first_heading(path)
     area_md = locs_dir / f"{area}.md"
     area_name = _read_first_heading(area_md) if area_md.exists() else area
     content_html = _markdown_to_html(path.read_text(encoding="utf-8"))
 
     body = (
-        f'<p><a href="/locations">← Locations</a> / '
-        f'<a href="/locations/{html.escape(area)}">{html.escape(area_name)}</a></p>'
+        f'<p><a href="/locations{qs}">← Locations</a> / '
+        f'<a href="/locations/{html.escape(area)}{qs}">{html.escape(area_name)}</a></p>'
         f'<div class="card">{content_html}</div>'
     )
     return render(f"{html.escape(name)} — {html.escape(campaign_name)}", body)
@@ -9452,62 +9528,42 @@ def class_detail(slug: str):
 # Combat map
 # ---------------------------------------------------------------------------
 
-_COMBAT_CSS = """
+_PLAY_CSS = """
 <style>
 .container{max-width:1400px}
-.combat-layout{display:flex;gap:20px;align-items:flex-start;flex-wrap:nowrap}
-.combat-canvas-wrap{flex:1 1 auto;overflow:hidden;min-width:0;height:560px;
-  border:1px solid #4a3828;border-radius:4px}
-#cmap{display:block;cursor:grab;outline:none}
-.combat-sidebar{flex:0 0 210px;width:210px;flex-shrink:0}
+.pm-host{position:relative;flex:1 1 auto;min-width:0;height:560px;overflow:hidden;
+  border:1px solid #4a3828;border-radius:4px;background:#1a1510;cursor:grab;outline:none}
+.pm-host.grabbing{cursor:grabbing}
+.pm-stage{position:absolute;top:0;left:0;transform-origin:0 0;will-change:transform}
+.pm-map{position:absolute;top:0;left:0}
+.pm-map svg{display:block}
+.pm-overlay{position:absolute;top:0;left:0;pointer-events:none}
+.pm-tip{position:fixed;z-index:50;max-width:280px;background:#1c1712;
+  border:1px solid #4a3828;border-radius:4px;padding:6px 9px;color:#d4c5a9;
+  font-size:.82em;pointer-events:none;box-shadow:0 4px 14px rgba(0,0,0,.5)}
+.pm-tip-title{color:#c8a96e;font-weight:bold;margin-bottom:2px}
 .zoom-btn{background:#2a2018;border:1px solid #4a3828;color:#c8a96e;padding:2px 9px;
   border-radius:3px;cursor:pointer;font-size:1em;line-height:1.4}
 .zoom-btn:hover{background:#3a3020}
-.init-row{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:4px;
-  margin:2px 0;border-left:3px solid transparent}
-.init-row.party{border-left-color:#4a8c4a}
-.init-row.enemy{border-left-color:#8c2a2a}
-.init-current{background:#2a2218}
-.init-portrait{width:34px;height:34px;border-radius:50%;overflow:hidden;flex-shrink:0;
-  background:#3a2818;display:flex;align-items:center;justify-content:center;
-  color:#d4c5a9;font-weight:bold;font-size:14px;border:2px solid #666}
-.init-portrait img{width:100%;height:100%;object-fit:cover}
-.init-info{flex:1;display:flex;justify-content:space-between;align-items:center;min-width:0}
-.init-name{font-size:.88em;color:#d4c5a9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.init-current .init-name{color:#c8a96e;font-weight:bold}
-.init-val{color:#8a7a60;font-size:.85em;font-family:monospace;margin-left:6px;flex-shrink:0}
+.zoom-btn:disabled{opacity:.45;cursor:default}
 </style>
 """
 
-_COMBAT_JS = (
-    'var map = new CombatMap(document.getElementById("cmap"), {cellPx: 36});\n'
-    'var initListEl = document.getElementById("init-list");\n'
+_PLAY_JS = (
+    'var map = new PlayMap(document.getElementById("areamap"));\n'
     '\n'
     'map.onZoom = function(z) {\n'
     '  var el = document.getElementById("zoom-label");\n'
     '  if (el) el.textContent = Math.round(z*100)+"%";\n'
     '};\n'
     '\n'
-    'map.onHover = function(x, y, label) {\n'
-    '  var txt = "("+x+", "+y+")";\n'
-    '  if (label) txt += " — " + label;\n'
-    '  else txt += " — click to copy";\n'
-    '  document.getElementById("coords").textContent = txt;\n'
-    '};\n'
+    'document.getElementById("zoom-in").addEventListener("click", function(){ map.zoomBy(1.25); });\n'
+    'document.getElementById("zoom-out").addEventListener("click", function(){ map.zoomBy(0.8); });\n'
+    'document.getElementById("zoom-fit").addEventListener("click", function(){ map.fit(); });\n'
     '\n'
-    'map.onTokenClick = function(c) {\n'
-    '  var el = document.getElementById("coords");\n'
-    '  if (c) el.textContent = c.name + " — movement: " + (c.movement||6) + " cells (click again to deselect)";\n'
-    '  else el.textContent = "hover map for coordinates · scroll to zoom";\n'
-    '};\n'
-    '\n'
-    'map.onClick = function(x, y) {\n'
-    '  document.getElementById("coords").textContent = \'place_combatant("name", \'+x+", "+y+")";\n'
-    '};\n'
-    '\n'
-    '// Cached DSL from the last /combat-state poll. The "Copy DSL"\n'
+    '// Cached DSL from the last /area-state poll. The "Copy DSL"\n'
     '// button reads from here so the user always gets the most recent\n'
-    '// version (positions, HP-derived tags, etc.).\n'
+    '// version. (In the player view ?fog=1 the DSL is withheld.)\n'
     'var _currentDsl = null;\n'
     '\n'
     'var copyBtn = document.getElementById("copy-dsl-btn");\n'
@@ -9543,32 +9599,38 @@ _COMBAT_JS = (
     '\n'
     'async function refresh() {\n'
     '  try {\n'
-    '    var r = await fetch("/combat-state");\n'
+    '    var r = await fetch("/area-state" + (window.AREA_FOG_QS || ""));\n'
     '    var data = await r.json();\n'
-    '    if (!data.active || !data.grid) {\n'
-    '      document.getElementById("round-info").textContent = "No active combat map";\n'
-    '      document.getElementById("turn-info").textContent = "";\n'
-    '      initListEl.innerHTML = \'<p class="muted" style="font-size:.85em">No combat active</p>\';\n'
+    '    var statusEl = document.getElementById("area-status");\n'
+    '    var subEl = document.getElementById("area-sub");\n'
+    '    if (!data.active || !data.grid || !data.grid.svg_url) {\n'
+    '      statusEl.textContent = "No map loaded for this area";\n'
+    '      subEl.textContent = "Call load_map(slug) to load one";\n'
     '      _currentDsl = null;\n'
     '      if (copyBtn) copyBtn.disabled = true;\n'
+    '      map.clear();\n'
     '      return;\n'
     '    }\n'
-    '    document.getElementById("round-info").textContent = "Round " + data.round;\n'
-    '    document.getElementById("turn-info").textContent = "▶ " + (data.current || "");\n'
+    '    var mapMeta = data.map || {};\n'
+    '    statusEl.textContent = mapMeta.name || mapMeta.slug || "Area";\n'
+    '    var revealedN = (data.revealed_rooms || []).length;\n'
+    '    var totalN = (data.rooms || []).length;\n'
+    '    subEl.textContent = totalN ? revealedN + "/" + totalN + " rooms revealed" : "";\n'
     '    _currentDsl = (data.grid && data.grid.dsl) || null;\n'
     '    if (copyBtn) copyBtn.disabled = !_currentDsl;\n'
-    '    map.render(data);\n'
-    '    map.renderInitList(initListEl, data.combatants || []);\n'
-    '    var unplaced = (data.combatants || []).filter(function(c){\n'
-    '      return c.x === null || c.x === undefined;\n'
-    '    });\n'
-    '    document.getElementById("unplaced").innerHTML = unplaced.length\n'
-    '      ? \'<span style="color:#8a7a60;font-size:.85em">Unplaced: \'\n'
-    '        + unplaced.map(function(c){ return c.name; }).join(", ")\n'
-    '        + \'</span>\'\n'
-    '      : "";\n'
+    '    map.setState(data);\n'
+    '    // Recenter on a set_map_focus point — only when it changes, so we\n'
+    '    // do not yank the view back while the user is panning around.\n'
+    '    if (data.focus) {\n'
+    '      var fk = data.focus.x + "," + data.focus.y;\n'
+    '      if (window._areaFocusKey !== fk) {\n'
+    '        window._areaFocusKey = fk;\n'
+    '        map.centerOn(data.focus.x, data.focus.y);\n'
+    '      }\n'
+    '    } else { window._areaFocusKey = null; }\n'
     '  } catch(e) {\n'
-    '    document.getElementById("round-info").textContent = "Waiting for combat…";\n'
+    '    var s = document.getElementById("area-status");\n'
+    '    if (s) s.textContent = "Waiting for map…";\n'
     '  }\n'
     '}\n'
     'refresh();\n'
@@ -9576,52 +9638,296 @@ _COMBAT_JS = (
 )
 
 
-@app.route("/combat")
-def combat_view():
+# Drives the /area page: load the dungml play-view widget (served by the
+# dungml backend) and mount it against the campaign's currently-loaded map.
+# /dungml-play-config supplies the map id + a fresh dungml bearer token; the
+# widget owns sessions, party movement and fog-of-war from there on, persisting
+# to the dungml server. We re-poll occasionally so that swapping the area map
+# (load_map) re-mounts the widget and so the bearer token never goes stale.
+_AREA_WIDGET_JS = """
+(function () {
+  var host = document.getElementById("areamap");
+  var statusEl = document.getElementById("dungml-status");
+  var token = null;          // latest bearer token; getToken() reads this
+  var mountedKey = null;     // "<mapId>:<sessionId>" currently mounted, or null
+
+  function setStatus(msg) { if (statusEl) statusEl.textContent = msg || ""; }
+
+  async function tick() {
+    var cfg;
+    try {
+      cfg = await (await fetch("/dungml-play-config")).json();
+    } catch (e) {
+      setStatus("dungml backend unreachable — is the dungml service running?");
+      return;
+    }
+    token = cfg.token;
+    if (cfg.error) { setStatus("dungml: " + cfg.error); }
+    if (!cfg.map_id) {
+      setStatus("No map loaded for this area — use the load_map(slug) MCP tool to pick one.");
+      if (mountedKey && window.DungmlPlay) { window.DungmlPlay.unmount(host); }
+      mountedKey = null;
+      return;
+    }
+    if (!window.DungmlPlay) {
+      setStatus("dungml widget failed to load from " + cfg.base_url + "/dungml-play.js");
+      return;
+    }
+    // Only (re)mount when the bound map/session changes — otherwise the
+    // periodic token refresh would reset the widget every poll. The widget
+    // polls internally for the party's moves once mounted.
+    var key = cfg.map_id + ":" + (cfg.session_id || "");
+    if (mountedKey !== key) {
+      if (!cfg.error) setStatus("");
+      mountedKey = key;
+      window.DungmlPlay.mount(host, {
+        baseUrl: cfg.base_url,
+        mapId: cfg.map_id,
+        sessionId: cfg.session_id || undefined,
+        playerView: true,
+        getToken: function () { return token; },
+      });
+    }
+  }
+
+  tick();
+  setInterval(tick, 30000);  // pick up load_map changes + refresh the token
+})();
+"""
+
+
+def _ensure_campaign_session(map_id: str, ms: dict) -> str:
+    """Bind (creating + seeding on first use) the campaign's dungml play
+    session for this map. Thin wrapper over ``_dh.ensure_play_session`` — the
+    binding lives in ``<campaign>/dungml_sessions.json`` so the widget always
+    opens the *campaign's* session (not a stray manual one). Seeded from the
+    MCP-side room fog (``revealed_rooms``); corridors and later rooms are added
+    in-play via the ``mark_explored`` MCP tool. See [[ttrpg2-area-play-viewer]].
+    """
+    return _dh.ensure_play_session(
+        cfg.get("_dir", Path(".")),
+        map_id,
+        ms.get("source", ""),
+        seed_names=ms.get("revealed_rooms", []),
+        session_name=f"{cfg.get('name', 'Campaign')} — party",
+    )
+
+
+@app.route("/dungml-play-config")
+def dungml_play_config():
+    """Config for the embedded dungml play widget on /area.
+
+    Resolves the active campaign's currently-loaded map (from
+    ``map_state.json``, written by the ``load_map`` MCP tool) to a dungml
+    map id, mints a fresh dungml bearer token, and binds (creating + seeding
+    on first use) the campaign's play session. Returns ``{base_url, map_id,
+    map_name, session_id, token, error?}``; ``map_id``/``session_id`` are null
+    when no map is loaded or the backend is unreachable.
+    """
+    base_url = _dh.api_base()
+    map_id = map_name = None
+    ms: dict = {}
+    ms_path = cfg.get("_dir", Path(".")) / "map_state.json"
+    if ms_path.exists():
+        try:
+            ms = json.loads(ms_path.read_text(encoding="utf-8"))
+            if ms.get("active"):
+                map_id = ms.get("dungml_id")
+                map_name = ms.get("name")
+        except Exception:
+            ms = {}
+    try:
+        token = _dh._ensure_token()
+    except Exception as e:
+        # Surface credential/connection problems to the page verbatim rather
+        # than failing the request (the widget shows the message inline).
+        return jsonify({"base_url": base_url, "map_id": map_id,
+                        "map_name": map_name, "session_id": None,
+                        "token": None, "error": str(e)})
+
+    session_id = None
+    error = None
+    if map_id:
+        try:
+            session_id = _ensure_campaign_session(map_id, ms)
+        except Exception as e:
+            error = f"could not bind play session: {e}"
+
+    out = {"base_url": base_url, "map_id": map_id, "map_name": map_name,
+           "session_id": session_id, "token": token}
+    if error:
+        out["error"] = error
+    return jsonify(out)
+
+
+@app.route("/area")
+def area_view():
     name = html.escape(cfg.get("name", "Campaign"))
     body = (
-        _COMBAT_CSS
-        + f'<h1>Combat Map</h1>'
-        + '<div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:12px">'
-        + '  <span id="round-info" style="color:#c8a96e;font-weight:bold">Loading…</span>'
-        + '  <span id="turn-info" style="color:#d4c5a9"></span>'
-        + '  <span style="margin-left:auto;display:flex;gap:5px;align-items:center">'
-        + '    <button class="zoom-btn" id="copy-dsl-btn" title="Copy current map DSL to clipboard (paste into the dungml editor to persist)">Copy DSL</button>'
-        + '    <button class="zoom-btn" onclick="map.setZoom(map.zoom*1.25)">+</button>'
-        + '    <button class="zoom-btn" onclick="map.setZoom(map.zoom*0.8)">−</button>'
-        + '    <button class="zoom-btn" onclick="map.setZoom(1)" title="Reset zoom">□</button>'
-        + '    <span id="zoom-label" style="color:#8a7a60;font-size:.8em;min-width:36px;text-align:right">100%</span>'
-        + '  </span>'
-        + '</div>'
-        + '<div style="color:#8a7a60;font-size:.8em;margin-bottom:8px">'
-        + '  <span id="coords">hover map for coordinates · scroll to zoom</span>'
-        + '</div>'
-        + '<div class="combat-layout">'
-        + '  <div class="combat-sidebar">'
-        + '    <h3 style="margin:0 0 8px;font-size:.95em;color:#c8a96e">Initiative Order</h3>'
-        + '    <div id="init-list"></div>'
-        + '  </div>'
-        + '  <div class="combat-canvas-wrap">'
-        + '    <canvas id="cmap"></canvas>'
-        + '    <div id="unplaced" style="margin-top:6px"></div>'
-        + '  </div>'
-        + '</div>'
-        + '<script src="/static/combat-map.js"></script>'
-        + '<script>' + _COMBAT_JS + '</script>'
+        '<h1>Area</h1>'
+        '<div style="color:#8a7a60;font-size:.85em;margin-bottom:8px">'
+        'dungml fog-of-war play view. Pick which map plays here with the '
+        '<code>load_map(slug)</code> MCP tool; sessions, party movement and '
+        'reveals are managed in the panel below and saved on the dungml server.'
+        '</div>'
+        '<div id="dungml-status" style="color:#c8a96e;margin-bottom:8px"></div>'
+        '<div id="areamap" style="height:calc(100vh - 170px);min-height:480px;'
+        'border:1px solid #4a3828;border-radius:4px;background:#0f0d0a;'
+        'overflow:hidden"></div>'
+        f'<script src="{html.escape(_dh.api_base())}/dungml-play.js"></script>'
+        '<script>' + _AREA_WIDGET_JS + '</script>'
     )
-    return render(f"Combat — {name}", body)
+    return render(f"Area — {name}", body)
 
 
-@app.route("/combat-state")
-def combat_state():
-    cs = cfg.get("_dir", Path(".")) / "combat_state.json"
-    if cs.exists():
+# DM-only dungml feature types — hidden from the player SVG until the party
+# triggers/discovers the cell (via spring_trap). Keyed generically by the
+# renderer's data-ref, so making another feature type DM-only is a one-line
+# change here rather than a special case.
+_DM_ONLY_FEATURE_REFS = frozenset({"trap"})
+
+# Door-state marks the renderer draws: door-trap (an X) and door-lock (a dot).
+# Both leak DM tactical detail, so the player SVG always strips them.
+_DM_DOOR_MARK_CLASSES = ("door-trap", "door-lock")
+
+_FEATURE_INSTANCE_RX = re.compile(
+    r'<g class="feature-instance"[^>]*\bdata-ref="(?P<ref>[^"]*)"[^>]*'
+    r'\btransform="translate\((?P<x>-?[\d.]+),\s*(?P<y>-?[\d.]+)\)[^"]*"[^>]*>'
+    r'.*?</g>',
+    re.DOTALL,
+)
+
+
+_DM_NOTES_RX = re.compile(r'\s+data-dm-notes="[^"]*"')
+_ROOM_TAG_RX = re.compile(r'<[a-zA-Z]+\b[^>]*\bdata-room="(?P<room>[^"]*)"[^>]*>')
+_ROOM_TOOLTIP_ATTRS_RX = re.compile(r'\s+data-(?:label|description)="[^"]*"')
+
+
+def _player_sanitize_svg(svg: str, revealed_traps: set, revealed_rooms: set) -> str:
+    """Return a player-safe copy of a rendered dungml SVG.
+
+    Strips DM-only detail the party has not earned sight of:
+      - trapped/locked door marks (always);
+      - DM-only feature instances (floor traps, ...) whose cell has not
+        been revealed via ``spring_trap``;
+      - DM notes (``data-dm-notes``) everywhere — never shown to players;
+      - the label/description of any room not in ``revealed_rooms``, so a
+        fogged (blacked-out) room leaks no readable contents via the tooltip
+        or the DOM. Geometry is left intact; the client paints fog over it.
+
+    Secret doors already render identically to closed doors, and hidden
+    layers are excluded by the renderer, so no further masking is needed.
+    """
+    for cls in _DM_DOOR_MARK_CLASSES:
+        svg = re.sub(
+            rf'<(?:line|circle|path|rect|polygon)\b[^>]*\bclass="{cls}"[^>]*/>',
+            "", svg,
+        )
+
+    def _keep(m: "re.Match") -> str:
+        if m.group("ref") not in _DM_ONLY_FEATURE_REFS:
+            return m.group(0)  # not DM-only — leave untouched
+        cell = (round(float(m.group("x"))), round(float(m.group("y"))))
+        return m.group(0) if cell in revealed_traps else ""
+
+    svg = _FEATURE_INSTANCE_RX.sub(_keep, svg)
+
+    # DM notes are never for players, revealed room or not.
+    svg = _DM_NOTES_RX.sub("", svg)
+
+    # Drop the readable label/description on any unrevealed room's elements.
+    def _strip_room(m: "re.Match") -> str:
+        tag = m.group(0)
+        if m.group("room") in revealed_rooms:
+            return tag
+        return _ROOM_TOOLTIP_ATTRS_RX.sub("", tag)
+
+    return _ROOM_TAG_RX.sub(_strip_room, svg)
+
+
+def _revealed_trap_cells(ms: dict | None) -> set:
+    """Set of (x, y) cells the party has sprung/seen, from map_state."""
+    if not ms:
+        return set()
+    out = set()
+    for c in ms.get("revealed_traps", []):
+        if isinstance(c, (list, tuple)) and len(c) == 2:
+            try:
+                out.add((int(c[0]), int(c[1])))
+            except (TypeError, ValueError):
+                continue
+    return out
+
+
+@app.route("/area-state")
+def area_state_endpoint():
+    """Explore-map state for the /area page, from ``map_state.json``.
+
+    The persistent area map (dungeon level, gatehouse, inn …) lives in
+    ``map_state.json``: the background SVG, room geometry, the revealed-rooms
+    set, and the party position. /area is a pure exploration view — combat is
+    no longer overlaid here (it will move into dungml).
+
+      - map active     → the explore payload (grid + rooms + fog + party)
+      - otherwise      → {active: False}
+    """
+    camp_dir = cfg.get("_dir", Path("."))
+
+    def _load(path: Path) -> dict | None:
+        if not path.exists():
+            return None
         try:
-            data = json.loads(cs.read_text(encoding="utf-8"))
-            return jsonify(data)
+            return json.loads(path.read_text(encoding="utf-8"))
         except Exception:
-            pass
-    return jsonify({"active": False})
+            return None
+
+    ms = _load(camp_dir / "map_state.json")
+
+    if not (ms and ms.get("active")):
+        return jsonify({"active": False})
+
+    out = {
+        "active": True,
+        "grid": {
+            "dsl":     ms.get("source", ""),
+            "svg_url": ms.get("svg_url"),
+            "width":   ms.get("width"),
+            "height":  ms.get("height"),
+        },
+        "map": {
+            "slug":  ms.get("slug"),
+            "name":  ms.get("name"),
+            "scale": ms.get("scale"),
+        },
+        "rooms": ms.get("rooms", []),
+        "revealed_rooms": ms.get("revealed_rooms", []),
+        "revealed_traps": ms.get("revealed_traps", []),
+    }
+    if ms.get("focus"):
+        out["focus"] = ms["focus"]
+    if ms.get("party"):
+        out["party"] = ms["party"]
+
+    # Player view: strip DM-only tactical detail from the served SVG and
+    # withhold the raw DSL (which would otherwise spell out every trap/door).
+    if _fog_on():
+        revealed = _revealed_trap_cells(ms)
+        grid = out.get("grid")
+        if isinstance(grid, dict):
+            prefix = "data:image/svg+xml;base64,"
+            su = grid.get("svg_url") or ""
+            if su.startswith(prefix):
+                try:
+                    raw = base64.b64decode(su[len(prefix):]).decode("utf-8")
+                    safe = _player_sanitize_svg(raw, revealed)
+                    grid["svg_url"] = prefix + base64.b64encode(
+                        safe.encode("utf-8")
+                    ).decode("ascii")
+                except Exception:
+                    pass  # on any decode/parse hiccup, fall back to unmodified
+            grid["dsl"] = ""
+
+    return jsonify(out)
 
 
 # ---------------------------------------------------------------------------
@@ -11438,13 +11744,13 @@ def greyhawk_page(title):
 from tools import world_map as _world_map
 
 
-@app.route("/maps")
-def maps_index():
+@app.route("/atlas")
+def atlas_index():
     """List all world maps in the active campaign + their views."""
     try:
         d = _world_map._maps_dir()
     except Exception as e:
-        return render("Maps", f'<h1>World Maps</h1><p style="color:#c66">{html.escape(str(e))}</p>')
+        return render("Atlas", f'<h1>Atlas</h1><p style="color:#c66">{html.escape(str(e))}</p>')
 
     items, fragments = [], []
     for p in sorted(d.glob("*.map")):
@@ -11455,7 +11761,7 @@ def maps_index():
         try:
             ws = _world_map.parse_file(p)
             view_links = " · ".join(
-                f'<a href="/maps/{html.escape(slug)}/{html.escape(v.name)}">{html.escape(v.name)}</a>'
+                f'<a href="/atlas/{html.escape(slug)}/{html.escape(v.name)}">{html.escape(v.name)}</a>'
                 for v in ws.views
             ) or '<span style="color:#8a7a60">no views</span>'
             n_features = len(ws.model)
@@ -11474,13 +11780,13 @@ def maps_index():
 
     if not items and not fragments:
         body = (
-            '<h1>World Maps</h1>'
+            '<h1>Atlas</h1>'
             '<p style="color:#8a7a60">No maps yet. Create one with the MCP tool '
             '<code>create_world_map(slug)</code>, then populate it via '
             '<code>update_world_map</code> or <code>add_world_map_feature</code>.</p>'
         )
     else:
-        body = '<h1>World Maps</h1>'
+        body = '<h1>Atlas</h1>'
         if items:
             body += '<ul style="list-style:none;padding:0">' + ''.join(items) + '</ul>'
         if fragments:
@@ -11491,7 +11797,7 @@ def maps_index():
                 'These are inlined by other maps via <code>!include</code>: '
                 + frag_html + '</p>'
             )
-    return render("World Maps", body)
+    return render("Atlas", body)
 
 
 def _map_icon_overrides() -> dict:
@@ -11514,8 +11820,8 @@ def _map_icon_overrides() -> dict:
     return out
 
 
-@app.route("/maps/<slug>/<view>")
-def map_view(slug, view):
+@app.route("/atlas/<slug>/<view>")
+def world_map_view(slug, view):
     """Render a Leaflet view of a world map."""
     path = _world_map._maps_dir() / f"{_world_map._safe_slug(slug)}.map"
     if not path.exists():
@@ -11526,12 +11832,12 @@ def map_view(slug, view):
         body = (
             f'<h1>{html.escape(slug)} — {html.escape(view)}</h1>'
             f'<p style="color:#c66">DSL error: {html.escape(str(e))}</p>'
-            f'<p><a href="/maps">← back to maps</a></p>'
+            f'<p><a href="/atlas">← back to atlas</a></p>'
         )
-        return render(f"Map: {slug}", body)
+        return render(f"Atlas: {slug}", body)
 
-    data_url  = f"/api/maps/{slug}/{view}.geojson"
-    party_url = f"/api/maps/{slug}/party.geojson"
+    data_url  = f"/api/atlas/{slug}/{view}.geojson"
+    party_url = f"/api/atlas/{slug}/party.geojson"
     icon_overrides = _map_icon_overrides()
     body = (
         '<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" '
@@ -11592,7 +11898,7 @@ def map_view(slug, view):
         '  }'
         '</style>'
         f'<h1>{html.escape(slug)} <span style="color:#8a7a60;font-size:.7em">— {html.escape(view)}</span></h1>'
-        '<p style="color:#8a7a60;font-size:.9em"><a href="/maps">← all maps</a></p>'
+        '<p style="color:#8a7a60;font-size:.9em"><a href="/atlas">← back to atlas</a></p>'
         '<div class="map-layout">'
         '  <div id="worldmap"></div>'
         '  <div id="worldmap-sidebar">Loading…</div>'
@@ -11606,11 +11912,11 @@ def map_view(slug, view):
         f'</script>'
         '<script src="/static/world-map.js"></script>'
     )
-    return render(f"Map: {slug}/{view}", body)
+    return render(f"Atlas: {slug}/{view}", body)
 
 
-@app.route("/api/maps/<slug>/<view>.geojson")
-def map_geojson(slug, view):
+@app.route("/api/atlas/<slug>/<view>.geojson")
+def atlas_geojson(slug, view):
     """Compile-on-demand GeoJSON for a world-map view."""
     path = _world_map._maps_dir() / f"{_world_map._safe_slug(slug)}.map"
     if not path.exists():
@@ -11623,8 +11929,8 @@ def map_geojson(slug, view):
     return jsonify(fc)
 
 
-@app.route("/api/maps/<slug>/party.geojson")
-def map_party_geojson(slug):
+@app.route("/api/atlas/<slug>/party.geojson")
+def atlas_party_geojson(slug):
     """Serve the party-position overlay if it exists (404 otherwise)."""
     overlay = _world_map._maps_dir() / f"{_world_map._safe_slug(slug)}.party.geojson"
     if not overlay.exists():

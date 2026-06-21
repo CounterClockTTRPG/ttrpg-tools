@@ -448,6 +448,47 @@ door at 1,7 { connects room.main  type wooden  state closed }
 
 ---
 
+## Area play view (`/area`) — embedded dungml fog-of-war
+
+`/area` no longer renders its own map: it embeds **dungml's play-view widget**
+(`dungml-play.js`, served by the dungml backend at `DUNGML_API_BASE`) and mounts
+it against the campaign's currently-loaded map. Sessions, party movement, and
+fog-of-war reveals are managed **in the panel on the page** and persist on the
+**dungml server** (dungml's `/api/sessions/*`), not in `map_state.json`.
+
+- **Choose the map** with `load_map(slug)` (MCP) — it records the dungml map id
+  in `map_state.json`, and the page resolves that to the embedded map. Swap maps
+  by calling `load_map` again; the page re-mounts within ~30 s (or reload it).
+- The embedded /area widget is a **read-only player view** (discovered map +
+  party marker; it polls every 6s). It opens the campaign's own session
+  automatically — no picker. GM controls (move/reveal/GM-view) live in dungml's
+  own app (`{DUNGML_API_BASE}` → the map's Play page).
+- **Keep it in sync with `mark_explored(names, party_at=…)`** (map_state MCP).
+  Call it whenever the party enters or passes through a space — **list corridors
+  as well as rooms** (e.g. `mark_explored(["corridor_15","room_8"], party_at="room_8")`),
+  since the widget needs corridors to draw a continuous explored map. Names are
+  bare DSL ids (`room_8`, `cave_3`, `corridor_15`).
+- **`reveal_room(name, set_party=True)`** is a shortcut: it reveals the room in
+  `map_state.json` *and* moves the party into it on the /area session — one call
+  instead of `reveal_room` + `mark_explored(party_at=…)`. Use it when the party
+  *moves into* a single room. (Default `set_party=False` keeps the old
+  map_state-only behaviour; for corridors / bulk reveals use `mark_explored`.)
+- There is **no `place_party_on_tactical_map` tool** anymore. `reveal_room`
+  (without `set_party`), `spring_trap`, and `set_map_focus` still write
+  `map_state.json` but **no longer affect the /area widget** — its fog lives in
+  the dungml session. `map_state`'s `revealed_rooms` is used only to seed the
+  session on first creation.
+- **Prerequisite:** the dungml service must be running and reachable at
+  `DUNGML_API_BASE`, and the `DUNGML_EMAIL`/`DUNGML_PASSWORD` in `.env` must own
+  the map. If config fails, the page shows the error inline.
+- ⚠️ **Player-facing caveat:** the widget exposes a "GM view" toggle and a reveal
+  dropdown to anyone viewing the page, and the page hands the browser a dungml
+  bearer token that owns the whole account. It is a **DM tool** — don't share the
+  `/area` URL with players as-is. (A `playerOnly` widget mode + scoped tokens are
+  the planned hardening.)
+
+---
+
 ## Dashboard
 
 Run `python3 dashboard.py [--port 5000]` for the web interface:

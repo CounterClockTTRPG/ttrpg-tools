@@ -5,8 +5,8 @@
  * Wiring (set before this script loads):
  *   window.WORLD_MAP_SLUG = "sheldomar";
  *   window.WORLD_MAP_VIEW = "world";
- *   window.WORLD_MAP_DATA = "/api/maps/sheldomar/world.geojson";
- *   window.WORLD_MAP_PARTY = "/api/maps/sheldomar/party.geojson";  // 404 OK
+ *   window.WORLD_MAP_DATA = "/api/atlas/sheldomar/world.geojson";
+ *   window.WORLD_MAP_PARTY = "/api/atlas/sheldomar/party.geojson";  // 404 OK
  */
 (function () {
     var dataUrl   = window.WORLD_MAP_DATA;
@@ -48,7 +48,7 @@
     // ── Per-kind icon library (inline SVG defaults) ─────────────────────────
     // Drop a file in static/map-icons/<kind>.{svg,png,webp} to override
     // any of these — see window.MAP_ICON_OVERRIDES injection from the
-    // /maps/<slug>/<view> server route.
+    // /atlas/<slug>/<view> server route.
     var INLINE_ICONS = {
         city:     '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 19 L3 12 L7 12 L7 9 L9 9 L9 6 L11 6 L11 9 L13 9 L13 6 L15 6 L15 9 L17 9 L17 12 L21 12 L21 19 Z" fill="#d4af37" stroke="#1a1510" stroke-width="1.4" stroke-linejoin="round"/></svg>',
         town:     '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M4 19 L4 12 L8 8 L12 12 L12 19 Z M12 19 L12 13 L16 10 L20 13 L20 19 Z" fill="#c8a96e" stroke="#1a1510" stroke-width="1.2" stroke-linejoin="round"/></svg>',

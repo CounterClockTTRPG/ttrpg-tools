@@ -364,13 +364,17 @@ def save_combat_state(cfg: dict, session: dict) -> None:
     # aren't combatants, so they don't appear here.
     grid = session.get("grid") or {}
     svg_combat_names = _names_in_combat_block(grid.get("dsl") or "")
+    chars_cfg = cfg.get("characters", {})
 
     combatants_out = []
     for i, c in enumerate(session["combatants"]):
+        key = c.get("_key")
+        cls = chars_cfg.get(key, {}).get("cls") if key else None
         combatants_out.append({
             "name":         c["name"],
             "side":         c["side"],
-            "key":          c.get("_key"),
+            "key":          key,
+            "class":        cls,
             "hp":           c["hp"],
             "hp_max":       c["hp_max"],
             "x":            c.get("x"),
@@ -378,7 +382,7 @@ def save_combat_state(cfg: dict, session: dict) -> None:
             "init":         c.get("init"),
             "conditions":   list(c["conditions"]),
             "current":      i == idx,
-            "portrait_url": _portrait_url(portrait_idx, c.get("_key"), c["name"], c["side"]),
+            "portrait_url": _portrait_url(portrait_idx, key, c["name"], c["side"]),
             "movement":     c.get("movement", 6),
             "in_svg":       c["name"] in svg_combat_names,
         })
